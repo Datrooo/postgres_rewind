@@ -1,11 +1,9 @@
 #!/usr/bin/env sh
-# Source this file to configure environment for forensic pg_rewind scripts.
+# Задача этого скрипта - настроить окружение для запуска скриптов в папке forensic_scripts.
 #
 # Usage:
-#   cd src/bin/pg_rewind/forensic_scripts
 #   source ./forensic_env.sh
-#
-# Also works when sourced from repo root or src/bin/pg_rewind.
+
 
 _search="$PWD"
 _repo_root=""

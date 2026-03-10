@@ -3,7 +3,7 @@
 # forensic_advanced.sh
 #
 # Проверяет декодирование пользовательских форматов и структур:
-# enum + bytea + composite type (созданная структура) через backend callbacks.
+# enum + bytea + composite type (созданная структура)
 #--------------------------------------------------------------------------
 set -euo pipefail
 
