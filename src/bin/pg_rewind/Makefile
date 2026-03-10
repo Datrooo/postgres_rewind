@@ -23,11 +23,14 @@ OBJS = \
 	datapagemap.o \
 	file_ops.o \
 	filemap.o \
+	forensic_decode.o \
+	heap_extract.o \
 	libpq_source.o \
 	local_source.o \
 	parsexlog.o \
 	pg_rewind.o \
 	timeline.o \
+	wal_analyzer.o \
 	xlogreader.o
 
 EXTRA_CLEAN = xlogreader.c

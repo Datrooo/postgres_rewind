@@ -27,6 +27,7 @@
 #include "fe_utils/string_utils.h"
 #include "file_ops.h"
 #include "filemap.h"
+#include "forensic_decode.h"
 #include "getopt_long.h"
 #include "pg_rewind.h"
 #include "rewind_source.h"
@@ -75,6 +76,7 @@ bool		showprogress = false;
 bool		dry_run = false;
 bool		do_sync = true;
 static bool restore_wal = false;
+static bool decode_wal = false;
 DataDirSyncMethod sync_method = DATA_DIR_SYNC_METHOD_FSYNC;
 
 /* Target history */
@@ -114,6 +116,7 @@ usage(const char *progname)
 	printf(_("  -?, --help                     show this help, then exit\n"));
 	printf(_("\nReport bugs to <%s>.\n"), PACKAGE_BUGREPORT);
 	printf(_("%s home page: <%s>\n"), PACKAGE_NAME, PACKAGE_URL);
+	printf(_("  -d, --decode                   decode wal record with can be used with forensic wal analysis\n"));
 }
 
 
@@ -135,6 +138,7 @@ main(int argc, char **argv)
 		{"progress", no_argument, NULL, 'P'},
 		{"debug", no_argument, NULL, 3},
 		{"sync-method", required_argument, NULL, 6},
+		{"decode", no_argument, NULL, 'd'},
 		{NULL, 0, NULL, 0}
 	};
 	int			option_index;
@@ -228,6 +232,9 @@ main(int argc, char **argv)
 					exit(1);
 				break;
 
+			case 'd':
+				decode_wal = true;
+				break;
 			default:
 				/* getopt_long already emitted a complaint */
 				pg_log_error_hint("Try \"%s --help\" for more information.", progname);
@@ -525,10 +532,16 @@ main(int argc, char **argv)
 	/*
 	 * We have now collected all the information we need from both systems,
 	 * and we are ready to start modifying the target directory.
-	 *
-	 * This is the point of no return. Once we start copying things, there is
-	 * no turning back!
 	 */
+	if (rewind_needed && decode_wal)
+	{
+		pg_log_info("performing forensic WAL analysis (from %X/%X to %X/%X)",
+					LSN_FORMAT_ARGS(divergerec),
+					LSN_FORMAT_ARGS(target_wal_endrec));
+		
+		perform_forensic_decode(datadir_target, divergerec, target_wal_endrec, target_tli);	
+	}
+
 	perform_rewind(filemap, source, chkptrec, chkpttli, chkptredo);
 
 	if (showprogress)
@@ -874,7 +887,7 @@ getTimelineHistory(TimeLineID tli, bool is_source, int *nentries)
 	 */
 	if (tli == 1)
 	{
-		history = pg_malloc_object(TimeLineHistoryEntry);
+		history = (TimeLineHistoryEntry *) pg_malloc(sizeof(TimeLineHistoryEntry));
 		history->tli = tli;
 		history->begin = history->end = InvalidXLogRecPtr;
 		*nentries = 1;
